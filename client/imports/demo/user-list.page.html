@@ -1,0 +1,22 @@
+
+<table>
+    <tr>
+        <td>
+            <h2>用户列表</h2>
+        </td>
+        <td>
+            <h2>分析结果</h2>
+        </td>
+    </tr>
+    <tr>
+        <td width="100" align="left">
+            <div *ngFor="let user of users" (click)="viewAnalysisResult(user)"
+                style="display: block;margin: 8px;background: lightblue">
+                {{user?.profile?.nickname}}
+            </div>
+        </td>
+        <td width="600" valign="top">
+            <eqmen-result-page [user]="selectUser"></eqmen-result-page>
+        </td>
+    </tr>
+</table>
