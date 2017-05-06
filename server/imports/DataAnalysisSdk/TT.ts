@@ -7,7 +7,7 @@ import {Matrix} from "sylvester";
 import {Vector} from "sylvester";
 
 export class TT {
-    private N = 14;
+    private N = 4;
 
     private weightOfUser = 0.3;
     private weightOfItem = 0.7;

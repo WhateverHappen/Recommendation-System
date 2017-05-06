@@ -36,7 +36,7 @@ export class TestOfItem {
     private tempAllDataList = [];
 
     private numOfOneData = 0;                           ///一个分组的数据量
-    public sourceNum = 65;                              ///要提取的数据量
+    public sourceNum = 5;                              ///要提取的数据量
 
     constructor() {
         this.initData();

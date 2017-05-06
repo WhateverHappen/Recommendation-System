@@ -1,7 +1,7 @@
-import {DataAnalysisSdk} from "../Recommend/DataAnalysisSdk";
+import {DataAnalysisSdk} from "../DataAnalysisSdk/DataAnalysisSdk";
 Meteor.methods({
-    analysis1: function (userId) {
-        return DataAnalysisSdk.analysis1(userId);
+    analysis1: function () {
+        return DataAnalysisSdk.analysis1();
     },
     analysis2: function () {
         console.log("Call method success,response ");

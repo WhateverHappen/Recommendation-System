@@ -15,12 +15,12 @@ export class DemoComponent implements OnInit {
     ngOnInit() {
     }
 
-    excuteAnylysis1() {
+    excuteAnylysis1(){
         console.log("hello");
-        MeteorObservable.call("analysis1").subscribe((response)=> {
+        MeteorObservable.call("analysis1").subscribe((response)=>{
             console.log("Call method success,response: ", response);
-            this.result = response;
-        }, (error)=> {
+            // this.result = response;
+        },(error)=>{
             console.log(error);
         })
     }
