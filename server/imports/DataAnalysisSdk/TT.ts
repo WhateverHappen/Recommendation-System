@@ -7,24 +7,43 @@ import {Matrix} from "sylvester";
 import {Vector} from "sylvester";
 
 export class TT {
-    private N = 4;
+    private N = 5;
 
-    private weightOfUser = 0.3;
-    private weightOfItem = 0.7;
+    private weightOfUser;
+    private weightOfItem;
 
     constructor() {
-        var result = this.calKQuality();
-        console.log("result:", result);
+    }
+
+    public calWeight(){
+        this.weightOfItem=1;
+        this.weightOfUser=1-this.weightOfItem;
+        var tempResult=[0,0,0];
+        var index=0;
+
+        for(let j=0;j<100;j++){
+            var result = this.calKQuality();
+            if((tempResult[0]+0.0005)<result[0]){
+                tempResult=result;
+                index=j;
+            }
+            this.weightOfItem-0.01;
+            this.weightOfUser=1-this.weightOfItem;
+            console.log("num:",j);
+            console.log("result:",result);
+        }
+        console.log("result:", tempResult);
+        console.log("index:",index);
     }
 
     private calKQuality() {
         var test = new TestOfItem();
-        var user_ip = test.yang_matrix;
+        test.execute();
 
         var resultTemp = [];
         for (let i = 0; i < 10; i++) {
-            resultTemp[i] = this.calResult(test.user_tagMatrixForTest[i], test.tag_artistMatrixForTest[i],
-                test.user_tagMatrixForTraining[i], test.tag_artistMatrixForTraining[i], user_ip);
+            resultTemp[i] = this.calResult(test.userList, test.artistList, test.dataListForTest[i],
+                test.user_tagMatrixForTraining[i], test.tag_artistMatrixForTraining[i]);
         }
 
         var result = [];
@@ -38,15 +57,69 @@ export class TT {
         return result;
     }
 
-    private calResult(user_tagMatrixForTest, tag_artistMatrixForTest,
-                      user_tagMatrixForTraining, tag_artistMatrixForTraining, user_ip) {
-        var testMatrix = this.Recommend(user_tagMatrixForTest, tag_artistMatrixForTest, user_ip);
-        var trainingMatrix = this.Recommend(user_tagMatrixForTraining, tag_artistMatrixForTraining, user_ip);
-        var result = this.calQuality(testMatrix, trainingMatrix);
+    private calResult(userList, artistList, dataListForTest,
+                      user_tagMatrixForTraining, tag_artistMatrixForTraining) {
+        var trainingMatrix = this.Recommend(user_tagMatrixForTraining, tag_artistMatrixForTraining);
+        var result = this.calQuality(userList, artistList, dataListForTest, trainingMatrix);
         return result;
     }
 
-    public Recommend(user_tagMatrix, tag_ipMatrix, user_ip) {
+    ///test不经过计算
+    private calQuality(userList, artistList, dataListForTest, user_artistMatrixForTraining) {
+        var precision;            ///准确率
+        var recall;                 ///召回率
+        var f_measure;
+        var numOfRight = 0;           ///相等的个数。。
+        var numOfR = 0;
+        var numOfT = 0;
+        var array = [];
+
+//===================================混合推荐======================================================
+        for (let i = 0; i < user_artistMatrixForTraining.elements.length; i++) {
+            for (let j = 0; j < user_artistMatrixForTraining.elements[i].length; j++) {
+                for (let k = 0; k < dataListForTest.length; k++) {
+                    if ((userList[i] == dataListForTest[k].userId)     ///用户相同
+                        && (dataListForTest[k].artistID == artistList[user_artistMatrixForTraining.elements[i][j] - 1])) {
+                        numOfRight++;
+                    }
+                }
+            }
+        }
+
+        numOfT = dataListForTest.length;
+
+        numOfR = this.N * user_artistMatrixForTraining.elements.length;
+//=====================================项目推荐================================================================
+//         for (let i = 0; i < user_artistMatrixForTraining.length; i++) {
+//             for (let j = 0; j < user_artistMatrixForTraining[i].length; j++) {
+//                 for (let k = 0; k < dataListForTest.length; k++) {
+//                     if ((userList[i] == dataListForTest[k].userId)     ///用户相同
+//                         && (dataListForTest[k].artistID == artistList[user_artistMatrixForTraining[i][j] - 1])) {
+//                         numOfRight++;
+//                     }
+//                 }
+//             }
+//         }
+//
+//         numOfT = dataListForTest.length;
+//
+//         numOfR = this.N * user_artistMatrixForTraining.length;
+//====================================================================================================
+
+        precision = numOfRight / numOfR;
+        recall = numOfRight / numOfT;
+        if (numOfRight == 0) {
+            f_measure = 0;
+        } else {
+            f_measure = (2 * precision * recall) / (precision + recall);
+        }
+        array[0] = precision;
+        array[1] = recall;
+        array[2] = f_measure;
+        return array;
+    }
+
+    public Recommend(user_tagMatrix, tag_ipMatrix) {
 
         var user_tag = user_tagMatrix.minor(2, 2, user_tagMatrix.elements.length - 1, user_tagMatrix.elements[0].length - 1);     ///去掉用户和标签的名称
 
@@ -347,66 +420,66 @@ export class TT {
         return r;
     }
 
-    public calQuality(user_artistMatrixForTest, user_artistMatrixForTraining) {
-        var precision;            ///准确率
-        var recall;                 ///召回率
-        var f_measure;
-        var numOfRight = 0;           ///相等的个数。。
-        var numOfR = 0;
-        var numOfT = 0;
-        var array = [];
+    /*public calQuality(user_artistMatrixForTest, user_artistMatrixForTraining) {
+     var precision;            ///准确率
+     var recall;                 ///召回率
+     var f_measure;
+     var numOfRight = 0;           ///相等的个数。。
+     var numOfR = 0;
+     var numOfT = 0;
+     var array = [];
 
-//===================================混合推荐======================================================
-        for (let i = 0; i < user_artistMatrixForTest.elements.length; i++) {
-            for (let j = 0; j < this.N; j++) {          ///用户i的推荐结果
-                for (let k = 0; k < user_artistMatrixForTest.elements[i].length; k++) {          ///用户i的测试结果
-                    if ((user_artistMatrixForTest.elements[i][k] == user_artistMatrixForTraining.elements[i][j]) &&
-                        (user_artistMatrixForTest.elements[i][j] != 0)) {   ///测试和训练有一样的推荐结果
-                        numOfRight++;
-                    }
-                }
-            }
-        }
+     //===================================混合推荐======================================================
+     //         for (let i = 0; i < user_artistMatrixForTest.elements.length; i++) {
+     //             for (let j = 0; j < this.N; j++) {          ///用户i的推荐结果
+     //                 for (let k = 0; k < user_artistMatrixForTest.elements[i].length; k++) {          ///用户i的测试结果
+     //                     if ((user_artistMatrixForTest.elements[i][k] == user_artistMatrixForTraining.elements[i][j]) &&
+     //                         (user_artistMatrixForTest.elements[i][j] != 0)) {   ///测试和训练有一样的推荐结果
+     //                         numOfRight++;
+     //                     }
+     //                 }
+     //             }
+     //         }
+     //
+     //         for (let i = 0; i < user_artistMatrixForTest.elements.length; i++) {
+     //             for (let j = 0; j < user_artistMatrixForTest.elements[i].length; j++) {
+     //                 if (user_artistMatrixForTest.elements[i][j] != 0) {
+     //                     numOfT++;
+     //                 }
+     //             }
+     //         }
+     //
+     //         numOfR = this.N * user_artistMatrixForTraining.elements.length;
+     //=====================================项目推荐================================================================
+     for (let i = 0; i < user_artistMatrixForTest.length; i++) {
+     for (let j = 0; j < this.N; j++) {          ///用户i的推荐结果
+     for (let k = 0; k < user_artistMatrixForTest[i].length; k++) {          ///用户i的测试结果
+     if ((user_artistMatrixForTest[i][k] == user_artistMatrixForTraining[i][j]) &&
+     (user_artistMatrixForTest[i][j] != 0)) {   ///测试和训练有一样的推荐结果
+     numOfRight++;
+     }
+     }
+     }
+     }
 
-        for (let i = 0; i < user_artistMatrixForTest.elements.length; i++) {
-            for (let j = 0; j < user_artistMatrixForTest.elements[i].length; j++) {
-                if (user_artistMatrixForTest.elements[i][j] != 0) {
-                    numOfT++;
-                }
-            }
-        }
+     for (let i = 0; i < user_artistMatrixForTest.length; i++) {
+     numOfT += user_artistMatrixForTest[i].length;
+     }
 
-        numOfR = this.N * user_artistMatrixForTraining.elements.length;
-//=====================================项目推荐================================================================
-//         for (let i = 0; i < user_artistMatrixForTest.length; i++) {
-//             for (let j = 0; j < this.N; j++) {          ///用户i的推荐结果
-//                 for (let k = 0; k < user_artistMatrixForTest[i].length; k++) {          ///用户i的测试结果
-//                     if ((user_artistMatrixForTest[i][k] == user_artistMatrixForTraining[i][j]) &&
-//                         (user_artistMatrixForTest[i][j] != 0)) {   ///测试和训练有一样的推荐结果
-//                         numOfRight++;
-//                     }
-//                 }
-//             }
-//         }
-//
-//         for (let i = 0; i < user_artistMatrixForTest.length; i++) {
-//             numOfT += user_artistMatrixForTest[i].length;
-//         }
-//
-//         numOfR = this.N * user_artistMatrixForTraining.length;
-//====================================================================================================
+     numOfR = this.N * user_artistMatrixForTraining.length;
+     //====================================================================================================
 
-        precision = numOfRight / numOfR;
-        recall = numOfRight / numOfT;
-        if (numOfRight == 0) {
-            f_measure = 0;
-        } else {
-            f_measure = (2 * precision * recall) / (precision + recall);
-        }
-        array[0] = precision;
-        array[1] = recall;
-        array[2] = f_measure;
-        return array;
-    }
+     precision = numOfRight / numOfR;
+     recall = numOfRight / numOfT;
+     if (numOfRight == 0) {
+     f_measure = 0;
+     } else {
+     f_measure = (2 * precision * recall) / (precision + recall);
+     }
+     array[0] = precision;
+     array[1] = recall;
+     array[2] = f_measure;
+     return array;
+     }*/
 }
 
